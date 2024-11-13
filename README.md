@@ -7,7 +7,7 @@ A library providing easy-to-use object-level caching methods for various data ty
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'active_model-caching'
+gem 'activemodel-caching'
 ```
 
 And then execute:
@@ -19,7 +19,7 @@ bundle install
 Or install it yourself as:
 
 ```bash
-gem install active_model-caching
+gem install activemodel-caching
 ```
 
 ## Usage
