@@ -7,10 +7,19 @@ Metrics/BlockLength:
 Metrics/AbcSize:
   Enabled: false
 
+Metrics/ClassLength:
+  Enabled: false
+
+Metrics/LineLength:
+  Enabled: false
+
 Metrics/MethodLength:
   Enabled: false
 
 Metrics/ModuleLength:
+  Enabled: false
+
+Style/ClassVars:
   Enabled: false
 
 Style/StringLiterals:
