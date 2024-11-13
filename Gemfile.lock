@@ -5,6 +5,7 @@ PATH
       activesupport (>= 7.0)
       base64 (>= 0.1)
       bigdecimal (>= 3.1.2)
+      globalid (>= 1.2)
       json (>= 2.8)
 
 GEM
@@ -74,7 +75,6 @@ PLATFORMS
 DEPENDENCIES
   activemodel-caching!
   brakeman (~> 6.1)
-  globalid (>= 1.2)
   minitest (~> 5.16)
   rake (~> 13.0)
   rubocop (~> 1.21)
