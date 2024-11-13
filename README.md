@@ -1,38 +1,161 @@
 # ActiveModel::Caching
 
-TODO: Delete this and the text below, and describe your gem
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/activemodel/caching`. To experiment with that code, run `bin/console` for an interactive prompt.
+A library providing easy-to-use object-level caching methods for various data types in a Ruby on Rails application, allowing you to cache different attribute types directly on your models.
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+Add this line to your application's Gemfile:
 
-Install the gem and add to the application's Gemfile by executing:
-
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```ruby
+gem 'active_model-caching'
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+And then execute:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle install
+```
+
+Or install it yourself as:
+
+```bash
+gem install active_model-caching
 ```
 
 ## Usage
 
-TODO: Write usage instructions here
+To use the caching methods provided by `ActiveModel::Caching`, include the module in your model and set up the cache store.
 
-## Development
+### Setup
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+You can set up a cache store globally in an initializer, for example, in `config/initializers/active_model_caching.rb`:
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+```ruby
+ActiveModel::Caching.setup do |config|
+  config.cache_store = ActiveSupport::Cache::MemoryStore.new # or any other cache store you prefer
+end
+```
+
+If you're using Rails, you can also default to Rails cache if you prefer:
+```ruby
+ActiveModel::Caching.setup do |config|
+  config.cache_store = Rails.cache
+end
+```
+
+### Basic Usage
+
+To enable caching for an attribute, simply call one of the `cache_*` methods in your model class. Here are the methods you can use:
+
+- `cache_string` - Caches a string value.
+- `cache_integer` - Caches an integer value.
+- `cache_decimal` - Caches a decimal value.
+- `cache_datetime` - Caches a datetime value.
+- `cache_flag` - Caches a boolean flag.
+- `cache_float` - Caches a float value.
+- `cache_enum` - Caches an enumerated value.
+- `cache_json` - Caches a JSON object.
+- `cache_list` - Caches an ordered list with an optional limit.
+- `cache_unique_list` - Caches a unique list with an optional limit.
+- `cache_set` - Caches a unique set with an optional limit.
+- `cache_ordered_set` - Caches an ordered set with an optional limit.
+- `cache_slots` - Caches available "slots" (e.g., seats) with helper methods.
+- `cache_slot` - Caches a single-slot availability.
+- `cache_counter` - Caches a counter that can be incremented and reset.
+- `cache_limiter` - Caches a limited counter, enforcing a maximum count.
+- `cache_hash` - Caches a hash structure.
+- `cache_boolean` - Caches a boolean value.
+
+#### Example
+
+Here’s how you might define a model with various cached attributes:
+
+```ruby
+class User
+  include ActiveModel::Caching
+
+  cache_string :session_token
+  cache_integer :view_count
+  cache_decimal :account_balance
+  cache_datetime :last_login
+  cache_flag :is_active
+  cache_enum :status, %w[active inactive suspended]
+  cache_json :preferences
+  cache_list :recent_searches, limit: 10
+  cache_set :tags, limit: 5
+  cache_slots :seats, available: 100
+  cache_counter :login_count
+  cache_boolean :is_verified
+end
+```
+
+With these, you’ll automatically have generated methods for interacting with the cache.
+
+### Detailed Method Descriptions
+
+- **`cache_string(attribute_name, expires_in: nil)`**: Caches a string attribute.
+  - Example: `cache_string :username`
+
+- **`cache_integer(attribute_name, expires_in: nil)`**: Caches an integer attribute.
+  - Example: `cache_integer :view_count`
+
+- **`cache_decimal(attribute_name, expires_in: nil)`**: Caches a decimal attribute.
+  - Example: `cache_decimal :account_balance`
+
+- **`cache_datetime(attribute_name, expires_in: nil)`**: Caches a datetime attribute.
+  - Example: `cache_datetime :last_login`
+
+- **`cache_flag(attribute_name, expires_in: nil)`**: Caches a boolean flag.
+  - Example: `cache_flag :is_active`
+
+- **`cache_enum(attribute_name, options, expires_in: nil)`**: Caches an enumerated value.
+  - Example: `cache_enum :status, %w[active inactive suspended]`
+
+- **`cache_json(attribute_name, expires_in: nil)`**: Caches a JSON object.
+  - Example: `cache_json :user_preferences`
+
+- **`cache_list(attribute_name, limit: nil, expires_in: nil)`**: Caches an ordered list, with an optional limit.
+  - Example: `cache_list :recent_posts, limit: 5`
+
+- **`cache_set(attribute_name, limit: nil, expires_in: nil)`**: Caches a unique set, with an optional limit.
+  - Example: `cache_set :tags, limit: 10`
+
+- **`cache_slots(attribute_name, available:, expires_in: nil)`**: Caches a set number of slots with helper methods.
+  - Example: `cache_slots :seats, available: 100`
+
+- **`cache_counter(attribute_name, expires_in: nil)`**: Caches a counter.
+  - Example: `cache_counter :login_count`
+
+- **`cache_boolean(attribute_name, expires_in: nil)`**: Caches a boolean value.
+  - Example: `cache_boolean :is_verified`
+
+### Example Methods
+
+For each cached attribute, methods are generated for getting and setting values. For example:
+
+```ruby
+user = User.new
+
+# Cache a string
+user.session_token = "abc123"
+puts user.session_token # => "abc123"
+
+# Increment a counter
+user.increment_login_count
+puts user.login_count # => 1
+
+# Reserve a slot
+if user.available_seats?
+  user.reserve_seats!
+end
+
+# Reset a slot
+user.reset_seats!
+```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/activemodel-caching.
+Bug reports and pull requests are welcome on GitHub at [https://github.com/your-username/active_model-caching](https://github.com/your-username/active_model-caching).
 
 ## License
 
