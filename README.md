@@ -66,6 +66,12 @@ To enable caching for an attribute, simply call one of the `cache_*` methods in 
 - `cache_hash` - Caches a hash structure.
 - `cache_boolean` - Caches a boolean value.
 
+#### Prerequisite
+
+In order to use the aforementioned methods in your class, you need to do two things:
+- include `ActiveModel::Caching`
+- your class must implement the `id` method.
+
 #### Example
 
 Here’s how you might define a model with various cached attributes:
