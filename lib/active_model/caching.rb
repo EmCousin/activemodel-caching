@@ -2,25 +2,81 @@
 
 require_relative "caching/version"
 
-require "base64"
-require "bigdecimal/util"
-require "json"
 require "active_support"
 require "active_support/time"
+require "base64"
+require "bigdecimal/util"
+require "global_id"
+require "json"
 
 module ActiveModel
   # Provides with a set of methods allowing to cache data structures at the object level
   module Caching
-    mattr_accessor :cache_store
-    @@cache_store = ActiveSupport::Cache::MemoryStore.new
+    extend ActiveSupport::Concern
+
+    include GlobalID::Identification
 
     class << self
+      # Configures the gem with a block. Example:
+      #   ActiveModel::Caching.setup do |config|
+      #     config.cache_store = Rails.cache
+      #     config.global_id_app = 'MyApp'
+      #   end
+      #
+      # @yield [ActiveModel::Caching] Yields self for configuration
+      # @return [void]
       def setup
         yield self
       end
+
+      # Returns the cache store to use for caching attributes.
+      # Defaults to Rails.cache if Rails is defined, otherwise uses MemoryStore.
+      #
+      # @return [ActiveSupport::Cache::Store] The configured cache store
+      def cache_store
+        @cache_store ||= default_cache_store
+      end
+
+      # Returns the application name used for GlobalID generation.
+      # Defaults to GlobalID.app if present, then Rails.application.name if Rails is defined.
+      #
+      # @return [String, nil] The configured application name for GlobalID
+      def global_id_app
+        @global_id_app ||= default_global_id_app
+      end
+
+      attr_writer :cache_store, :global_id_app
+
+      private
+
+      # @private
+      # Returns the default cache store based on the environment.
+      #
+      # @return [ActiveSupport::Cache::Store] The default cache store
+      def default_cache_store
+        if defined?(Rails)
+          Rails.cache
+        else
+          ActiveSupport::Cache::MemoryStore.new
+        end
+      end
+
+      # @private
+      # Returns the default application name for GlobalID based on the environment.
+      #
+      # @return [String, nil] The default application name
+      def default_global_id_app
+        if GlobalID.app.present?
+          GlobalID.app
+        elsif defined?(Rails)
+          Rails.application.name
+        end
+      end
     end
 
-    extend ActiveSupport::Concern
+    included do
+      delegate :cache_store, to: ActiveModel::Caching
+    end
 
     class_methods do
       # Caches a string value for the given attribute.
@@ -117,6 +173,7 @@ module ActiveModel
 
         attribute_name
       end
+      alias_method :cache_boolean, :cache_flag
 
       # Caches a float value for the given attribute.
       #
@@ -426,6 +483,11 @@ module ActiveModel
           cache_store.write(cache_key_for(attribute_name), new_value, expires_in: expires_in)
         end
 
+        define_method(:"decrement_#{attribute_name}") do
+          new_value = send(attribute_name) - 1
+          cache_store.write(cache_key_for(attribute_name), new_value, expires_in: expires_in)
+        end
+
         define_method(:"reset_#{attribute_name}") do
           cache_store.write(cache_key_for(attribute_name), 0, expires_in: expires_in)
         end
@@ -483,23 +545,6 @@ module ActiveModel
 
         attribute_name
       end
-
-      # Caches a boolean value for the given attribute.
-      #
-      # @param attribute_name [Symbol] the name of the boolean attribute to cache.
-      # @param expires_in [ActiveSupport::Duration, nil] optional expiration time for the cache entry.
-      #
-      # @example
-      #   cache_boolean :is_verified
-      def cache_boolean(attribute_name, expires_in: nil)
-        define_method(attribute_name) do
-          cache_store.read(cache_key_for(attribute_name)).present?
-        end
-
-        define_method(:"#{attribute_name}=") do |value|
-          cache_store.write(cache_key_for(attribute_name), !!value, expires_in: expires_in)
-        end
-      end
     end
 
     private
@@ -509,7 +554,11 @@ module ActiveModel
     # @param attribute_name [Symbol] the name of the attribute.
     # @return [String] the generated cache key.
     def cache_key_for(attribute_name)
-      to_global_id(attribute_name: attribute_name)
+      if ActiveModel::Caching.global_id_app.present?
+        to_global_id(attribute_name: attribute_name, app: ActiveModel::Caching.global_id_app)
+      else
+        to_global_id(attribute_name: attribute_name)
+      end
     end
   end
 end

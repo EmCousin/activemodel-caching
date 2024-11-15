@@ -10,71 +10,26 @@ Add this line to your application's Gemfile:
 gem 'activemodel-caching'
 ```
 
-And then execute:
+Then execute:
 
 ```bash
-bundle install
+$ bundle install
 ```
 
-Or install it yourself as:
+## Configuration
 
-```bash
-gem install activemodel-caching
+Configure the gem in an initializer:
+
+```ruby
+ActiveModel::Caching.setup do |config|
+  config.cache_store = Rails.cache # Defaults to Rails.cache if Rails is defined, otherwise to memory store
+  config.global_id_app = 'MyApp'   # Defaults to GlobalID.app if present, otherwise to Rails.application.name if Rails is defined
+end
 ```
 
 ## Usage
 
-To use the caching methods provided by `ActiveModel::Caching`, include the module in your model and set up the cache store.
-
-### Setup
-
-You can set up a cache store globally in an initializer, for example, in `config/initializers/active_model_caching.rb`:
-
-```ruby
-ActiveModel::Caching.setup do |config|
-  config.cache_store = ActiveSupport::Cache::MemoryStore.new # or any other cache store you prefer
-end
-```
-
-If you're using Rails, you can also default to Rails cache if you prefer:
-```ruby
-ActiveModel::Caching.setup do |config|
-  config.cache_store = Rails.cache
-end
-```
-
-### Basic Usage
-
-To enable caching for an attribute, simply call one of the `cache_*` methods in your model class. Here are the methods you can use:
-
-- `cache_string` - Caches a string value.
-- `cache_integer` - Caches an integer value.
-- `cache_decimal` - Caches a decimal value.
-- `cache_datetime` - Caches a datetime value.
-- `cache_flag` - Caches a boolean flag.
-- `cache_float` - Caches a float value.
-- `cache_enum` - Caches an enumerated value.
-- `cache_json` - Caches a JSON object.
-- `cache_list` - Caches an ordered list with an optional limit.
-- `cache_unique_list` - Caches a unique list with an optional limit.
-- `cache_set` - Caches a unique set with an optional limit.
-- `cache_ordered_set` - Caches an ordered set with an optional limit.
-- `cache_slots` - Caches available "slots" (e.g., seats) with helper methods.
-- `cache_slot` - Caches a single-slot availability.
-- `cache_counter` - Caches a counter that can be incremented and reset.
-- `cache_limiter` - Caches a limited counter, enforcing a maximum count.
-- `cache_hash` - Caches a hash structure.
-- `cache_boolean` - Caches a boolean value.
-
-#### Prerequisite
-
-In order to use the aforementioned methods in your class, you need to do two things:
-- include `ActiveModel::Caching`
-- your class must implement the `id` method.
-
-#### Example
-
-Here’s how you might define a model with various cached attributes:
+Include the module in your class:
 
 ```ruby
 class User
@@ -82,87 +37,202 @@ class User
 
   cache_string :session_token
   cache_integer :view_count
-  cache_decimal :account_balance
-  cache_datetime :last_login
-  cache_flag :is_active
-  cache_enum :status, %w[active inactive suspended]
-  cache_json :preferences
-  cache_list :recent_searches, limit: 10
-  cache_set :tags, limit: 5
-  cache_slots :seats, available: 100
-  cache_counter :login_count
-  cache_boolean :is_verified
+  # ... etc
 end
 ```
 
-With these, you’ll automatically have generated methods for interacting with the cache.
+## Available Cache Types
 
-### Detailed Method Descriptions
+### Basic Types
 
-- **`cache_string(attribute_name, expires_in: nil)`**: Caches a string attribute.
-  - Example: `cache_string :username`
+#### `cache_string`
+Caches a string value.
+```ruby
+cache_string :session_token
+# Generates:
+# - session_token
+# - session_token=
+```
 
-- **`cache_integer(attribute_name, expires_in: nil)`**: Caches an integer attribute.
-  - Example: `cache_integer :view_count`
+#### `cache_integer`
+Caches an integer value.
+```ruby
+cache_integer :view_count
+# Generates:
+# - view_count
+# - view_count=
+```
 
-- **`cache_decimal(attribute_name, expires_in: nil)`**: Caches a decimal attribute.
-  - Example: `cache_decimal :account_balance`
+#### `cache_decimal`
+Caches a decimal value.
+```ruby
+cache_decimal :account_balance
+# Generates:
+# - account_balance
+# - account_balance=
+```
 
-- **`cache_datetime(attribute_name, expires_in: nil)`**: Caches a datetime attribute.
-  - Example: `cache_datetime :last_login`
+#### `cache_datetime`
+Caches a datetime value.
+```ruby
+cache_datetime :last_login
+# Generates:
+# - last_login
+# - last_login=
+```
 
-- **`cache_flag(attribute_name, expires_in: nil)`**: Caches a boolean flag.
-  - Example: `cache_flag :is_active`
+#### `cache_flag` / `cache_boolean`
+Caches a boolean value.
+```ruby
+cache_flag :is_active
+# or
+cache_boolean :is_verified
+# Generates:
+# - is_active
+# - is_active=
+```
 
-- **`cache_enum(attribute_name, options, expires_in: nil)`**: Caches an enumerated value.
-  - Example: `cache_enum :status, %w[active inactive suspended]`
+#### `cache_float`
+Caches a float value.
+```ruby
+cache_float :average_rating
+# Generates:
+# - average_rating
+# - average_rating=
+```
 
-- **`cache_json(attribute_name, expires_in: nil)`**: Caches a JSON object.
-  - Example: `cache_json :user_preferences`
+### Complex Types
 
-- **`cache_list(attribute_name, limit: nil, expires_in: nil)`**: Caches an ordered list, with an optional limit.
-  - Example: `cache_list :recent_posts, limit: 5`
+#### `cache_enum`
+Caches an enum value, storing the value among defined options.
+```ruby
+cache_enum :status, %w[active inactive suspended]
+# Generates:
+# - status
+# - status=
+```
 
-- **`cache_set(attribute_name, limit: nil, expires_in: nil)`**: Caches a unique set, with an optional limit.
-  - Example: `cache_set :tags, limit: 10`
+#### `cache_json`
+Caches a JSON value.
+```ruby
+cache_json :user_preferences
+# Generates:
+# - user_preferences
+# - user_preferences=
+```
 
-- **`cache_slots(attribute_name, available:, expires_in: nil)`**: Caches a set number of slots with helper methods.
-  - Example: `cache_slots :seats, available: 100`
+#### `cache_hash`
+Caches a hash value.
+```ruby
+cache_hash :settings
+# Generates:
+# - settings
+# - settings=
+```
 
-- **`cache_counter(attribute_name, expires_in: nil)`**: Caches a counter.
-  - Example: `cache_counter :login_count`
+### Collections
 
-- **`cache_boolean(attribute_name, expires_in: nil)`**: Caches a boolean value.
-  - Example: `cache_boolean :is_verified`
+#### `cache_list`
+Caches an ordered list of values, maintaining order and optional limit.
+```ruby
+cache_list :recent_posts, limit: 5
+# Generates:
+# - recent_posts
+# - add_to_recent_posts
+# - remove_from_recent_posts
+```
 
-### Example Methods
+#### `cache_unique_list`
+Caches a unique list of values, maintaining uniqueness and optional limit.
+```ruby
+cache_unique_list :favorite_articles, limit: 10
+# Generates:
+# - favorite_articles
+# - add_to_favorite_articles
+# - remove_from_favorite_articles
+```
 
-For each cached attribute, methods are generated for getting and setting values. For example:
+#### `cache_set`
+Caches a set of unique values with optional limit.
+```ruby
+cache_set :tags, limit: 5
+# Generates:
+# - tags
+# - add_to_tags
+# - remove_from_tags
+```
+
+#### `cache_ordered_set`
+Caches an ordered set of values, maintaining order and optional limit.
+```ruby
+cache_ordered_set :recent_views, limit: 10
+# Generates:
+# - recent_views
+# - add_to_recent_views
+# - remove_from_recent_views
+```
+
+### Special Types
+
+#### `cache_slots`
+Caches a limited number of available "slots" for resources like seats or reservations.
+```ruby
+cache_slots :seats, available: 10
+# Generates:
+# - seats
+# - available_seats?
+# - reserve_seats!
+# - release_seats!
+# - reset_seats!
+```
+
+#### `cache_slot`
+Caches a single slot (binary available/taken resource).
+```ruby
+cache_slot :parking_space
+# Generates:
+# - parking_space
+# - available_parking_space?
+# - reserve_parking_space!
+# - release_parking_space!
+# - reset_parking_space!
+```
+
+#### `cache_counter`
+Caches a counter value.
+```ruby
+cache_counter :likes_count
+# Generates:
+# - likes_count
+# - increment_likes_count
+# - decrement_likes_count
+# - reset_likes_count
+```
+
+#### `cache_limiter`
+Caches a limiter value with a maximum allowed count.
+```ruby
+cache_limiter :api_requests, limit: 100
+# Generates:
+# - api_requests
+# - increment_api_requests
+# - reset_api_requests
+```
+
+## Options
+
+All cache methods accept an optional `expires_in` parameter:
 
 ```ruby
-user = User.new
-
-# Cache a string
-user.session_token = "abc123"
-puts user.session_token # => "abc123"
-
-# Increment a counter
-user.increment_login_count
-puts user.login_count # => 1
-
-# Reserve a slot
-if user.available_seats?
-  user.reserve_seats!
-end
-
-# Reset a slot
-user.reset_seats!
+cache_string :session_token, expires_in: 1.hour
+cache_counter :daily_visits, expires_in: 1.day
 ```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at [https://github.com/your-username/active_model-caching](https://github.com/your-username/active_model-caching).
+Bug reports and pull requests are welcome at https://github.com/EmCousin/activemodel-caching.
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+This gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+```
